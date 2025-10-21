@@ -42,8 +42,8 @@ Etic/
 
 1. **Clone the repository**
    ```bash
-   git clone [your-repo-url]
-   cd Etic
+   git clone https://github.com/huriyeeym/Etic-Ecommerce.git
+   cd Etic-Ecommerce
    ```
 
 2. **Update Database Connection**

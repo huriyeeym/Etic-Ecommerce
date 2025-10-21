@@ -1,0 +1,22 @@
+﻿@model LoginViewModel
+@{
+    Layout = "_AutLayout";
+}
+<div class="login">
+    <div class="login-form-container">
+        <div class="login-form">
+            <form asp-controller="Authencation" asp-action="Index" method="post">
+                <input type="text" asp-for="Email" placeholder="Username">
+                <input type="password" asp-for="Password" placeholder="Password">
+                <div class="button-box">
+                    <div class="login-toggle-btn">
+                        <input type="checkbox">
+                        <label>Remember me</label>
+                        <a href="#">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="default-btn floatright">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

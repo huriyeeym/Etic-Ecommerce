@@ -1,0 +1,64 @@
+﻿@model ElectroProductWrapperModel
+<div class="electro-product-wrapper wrapper-padding pt-95 pb-45">
+    <div class="container-fluid">
+        <div class="section-title-4 text-center mb-40">
+            <h2>Yeni Ürünler</h2>
+        </div>
+        <div class="top-product-style">
+            <div class="product-tab-list3 text-center mb-80 nav product-menu-mrg" role="tablist">
+                @foreach (var item in Model.Categories)
+                {
+                    <a class="active" href="#ca_@item.Id" data-bs-toggle="tab" role="tab">
+                        <h4>@item.Name</h4>
+                    </a>
+                }
+            </div>
+            <div class="tab-content">
+                @foreach (var item in Model.Categories)
+                {
+                    <div class="tab-pane active show fade" id="ca_@item.Id" role="tabpanel">
+                        <div class="custom-row-2">
+                            @foreach (var itemSub in Model.ProductCategories.Where(x => x.CategoryId == item.Id || x.CategoryId == item.ParentId).Take(8).ToList())
+                            {
+                                
+                                    var product = Model.Products.FirstOrDefault(x => x.Id == itemSub.ProductId);
+                                
+                            
+                                <div class="custom-col-style-2 custom-col-4">
+                                    <div class="product-wrapper product-border mb-24">
+                                        <div class="product-img-3">
+                                            <a href="/urun/@product.SeoLink">
+                                                <img src="@Model.ProductImages.FirstOrDefault(x => x.ProductId == itemSub.ProductId).ImageUrl" alt="">
+                                            </a>
+                                            <div class="product-action-right">
+                                                <a class="animate-right" href="#" data-bs-target="#exampleModal" data-bs-toggle="modal" title="Quick View">
+                                                    <i class="pe-7s-look"></i>
+                                                </a>
+                                                <a class="animate-top" title="Add To Cart" href="#">
+                                                    <i class="pe-7s-cart"></i>
+                                                </a>
+                                                <a class="animate-left" title="Wishlist" href="#">
+                                                    <i class="pe-7s-like"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="product-content-4 text-center">
+
+                                            <h4><a href="/urun/@product.SeoLink">@product.Name</a></h4>
+                                         
+                                            <h5>@product.Price.ToString("C")</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                           
+
+                        </div>
+                    </div>
+                }
+
+
+            </div>
+        </div>
+    </div>
+</div>

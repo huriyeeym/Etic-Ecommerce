@@ -45,10 +45,49 @@ namespace Etic.Business.Services
             return (IList<Setting>)cacheData;
           
         }
+
+        public IList<Setting> GetAll()
+        {
+            return _settingDal.GetAll().OrderBy(s => s.Id).ToList();
+        }
+
+        public Setting GetById(string id)
+        {
+            return _settingDal.Get(x => x.Id == id);
+        }
+
+        public void Add(Setting setting)
+        {
+            _settingDal.Add(setting);
+            _memoryCache.Remove("settings");
+        }
+
+        public void Update(Setting setting)
+        {
+            _settingDal.Update(setting);
+            _memoryCache.Remove("settings");
+            _memoryCache.Remove("setting_" + setting.Id);
+        }
+
+        public void Delete(string id)
+        {
+            var setting = GetById(id);
+            if (setting != null)
+            {
+                _settingDal.Delete(setting);
+                _memoryCache.Remove("settings");
+                _memoryCache.Remove("setting_" + setting.Id);
+            }
+        }
     }
     public interface ISettingService
     {
         public IList<Setting> GetSettings();
         public Setting GetSetting(string name);
+        IList<Setting> GetAll();
+        Setting GetById(string id);
+        void Add(Setting setting);
+        void Update(Setting setting);
+        void Delete(string id);
     }
 }

@@ -1,0 +1,306 @@
+@model IEnumerable<Etic.Entities.Category>
+
+@{
+    ViewData["Title"] = "Categories";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Categories</li>";
+}
+
+<!-- Page Actions -->
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Category
+    </a>
+</div>
+
+<!-- Data Table -->
+<div class="data-table">
+    <!-- Table Header with Filters -->
+    <div class="table-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="table-filters">
+                    <div class="filter-input">
+                        <input type="text" id="searchInput" placeholder="Find Category" class="form-control">
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-danger btn-sm" id="bulkDeleteBtn" onclick="bulkDelete()" disabled>
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    @if (Model != null && Model.Any())
+    {
+        <table class="table" id="categoryTable">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>Category</th>
+                    <th>Create At</th>
+                    <th>Status</th>
+                    <th style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var category in Model.Where(c => !c.IsDeleted))
+                {
+                    <tr data-id="@category.Id" data-name="@category.Name.ToLower()" data-status="@(category.IsDeleted ? "inactive" : "active")">
+                        <td>
+                            <input type="checkbox" class="row-checkbox" value="@category.Id" onchange="updateBulkActions()">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-weight: 600;">
+                                    @category.Name.Substring(0, 1).ToUpper()
+                                </div>
+                                <div>
+                                    <div style="font-weight: 500; color: var(--dark);">@category.Name</div>
+                                    <div style="font-size: 12px; color: var(--gray);">/@category.SeoLink</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--gray);">
+                            @category.CreatedDate.ToString("MMM dd, yyyy")
+                            <div style="font-size: 12px;">@category.CreatedDate.ToString("hh:mm tt")</div>
+                        </td>
+                        <td>
+                            @if (!category.IsDeleted)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle me-1"></i>Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Inactive
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@category.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(@category.Id, '@category.Name')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Table Footer -->
+        <div class="table-footer">
+            <div class="pagination-info">
+                Showing <span id="showingStart">1</span> to <span id="showingEnd">@Model.Count()</span> of <span id="totalCount">@Model.Count()</span> entries
+            </div>
+            <div>
+                <select id="rowsPerPage" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateTable()">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h5>No Categories Yet</h5>
+            <p>Create your first category to organize products</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create First Category
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let allRows = [];
+        let filteredRows = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            collectRows();
+            updateTable();
+        });
+        
+        function collectRows() {
+            const tbody = document.querySelector('#categoryTable tbody');
+            if (tbody) {
+                allRows = Array.from(tbody.querySelectorAll('tr'));
+                filteredRows = [...allRows];
+            }
+        }
+        
+        function updateTable() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            
+            filteredRows = allRows.filter(row => {
+                const name = row.dataset.name || '';
+                const status = row.dataset.status || '';
+                
+                const matchesSearch = name.includes(searchTerm);
+                const matchesStatus = !statusFilter || status === statusFilter;
+                
+                return matchesSearch && matchesStatus;
+            });
+            
+            renderTable();
+        }
+        
+        function renderTable() {
+            const tbody = document.querySelector('#categoryTable tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h5>No Results Found</h5>
+                                <p>Try adjusting your search or filter criteria</p>
+                                <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filteredRows.forEach(row => {
+                    tbody.appendChild(row.cloneNode(true));
+                });
+            }
+            
+            updatePaginationInfo();
+        }
+        
+        function updatePaginationInfo() {
+            const total = allRows.length;
+            const showing = filteredRows.length;
+            
+            document.getElementById('showingStart').textContent = showing > 0 ? 1 : 0;
+            document.getElementById('showingEnd').textContent = showing;
+            document.getElementById('totalCount').textContent = total;
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            updateTable();
+        }
+        
+        // Search on keyup
+        document.getElementById('searchInput')?.addEventListener('keyup', updateTable);
+        document.getElementById('statusFilter')?.addEventListener('change', updateTable);
+        
+        // Select All
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBulkActions();
+        }
+        
+        function updateBulkActions() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = checkedBoxes.length === 0;
+            }
+            
+            // Update select all checkbox
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.row-checkbox');
+            if (selectAll && allCheckboxes.length > 0) {
+                selectAll.checked = checkedBoxes.length === allCheckboxes.length;
+            }
+        }
+        
+        // Bulk Delete
+        function bulkDelete() {
+            const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            if (checkedIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${checkedIds.length} categories?`)) {
+                return;
+            }
+            
+            fetch('@Url.Action("BulkDelete", "Category")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(checkedIds)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message || `${checkedIds.length} categories deleted!`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message || 'Delete operation failed!', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred!', 'error');
+            });
+        }
+        
+        // Single Delete
+        function deleteCategory(id, name) {
+            if (!confirm(`Are you sure you want to delete "${name}"?`)) {
+                return;
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("Delete", "Category")';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id';
+            input.value = id;
+            form.appendChild(input);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        // Toggle Status
+        function toggleStatus(id, newStatus) {
+            // Bu fonksiyon henüz backend'de yok, şimdilik sadece toast gösterelim
+            showToast('Status update feature coming soon!', 'warning');
+            // TODO: Backend'de UpdateStatus endpoint'i eklendiğinde aktif olacak
+        }
+    </script>
+}

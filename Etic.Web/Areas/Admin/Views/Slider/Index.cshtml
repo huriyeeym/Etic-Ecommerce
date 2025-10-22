@@ -1,0 +1,287 @@
+@model IEnumerable<Etic.Entities.Slider>
+
+@{
+    ViewData["Title"] = "Sliders";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Sliders</li>";
+}
+
+<!-- Page Actions -->
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Slider
+    </a>
+</div>
+
+<!-- Data Table -->
+<div class="data-table">
+    <!-- Table Header -->
+    <div class="table-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="table-filters">
+                    <div class="filter-input">
+                        <input type="text" id="searchInput" placeholder="Find Slider" class="form-control">
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-danger btn-sm" id="bulkDeleteBtn" onclick="bulkDelete()" disabled>
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    @if (Model != null && Model.Any())
+    {
+        <table class="table" id="sliderTable">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>Slider</th>
+                    <th>Create At</th>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var slider in Model.Where(s => !s.IsDeleted).OrderBy(s => s.Sort))
+                {
+                    <tr data-id="@slider.Id" 
+                        data-title="@slider.Title.ToLower()"
+                        data-status="@(slider.IsActive ? "active" : "inactive")">
+                        <td>
+                            <input type="checkbox" class="row-checkbox" value="@slider.Id" onchange="updateBulkActions()">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(slider.ImageUrl))
+                                {
+                                    <img src="@slider.ImageUrl" alt="@slider.Title" 
+                                         style="width: 80px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 12px; border: 1px solid var(--border);" />
+                                }
+                                else
+                                {
+                                    <div style="width: 80px; height: 50px; background: var(--light-gray); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid var(--border);">
+                                        <i class="fas fa-image" style="color: var(--gray);"></i>
+                                    </div>
+                                }
+                                <div>
+                                    <div style="font-weight: 500; color: var(--dark);">@slider.Title</div>
+                                    @if (!string.IsNullOrEmpty(slider.Description))
+                                    {
+                                        <div style="font-size: 12px; color: var(--gray);">@slider.Description.Substring(0, Math.Min(50, slider.Description.Length))...</div>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--gray);">
+                            @slider.CreatedDate.ToString("MMM dd, yyyy")
+                            <div style="font-size: 12px;">@slider.CreatedDate.ToString("hh:mm tt")</div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: var(--light-gray); color: var(--gray);">
+                                Order: @slider.Sort
+                            </span>
+                        </td>
+                        <td>
+                            @if (slider.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Inactive</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@slider.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSlider(@slider.Id, '@slider.Title')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Table Footer -->
+        <div class="table-footer">
+            <div class="pagination-info">
+                Showing <span id="showingStart">1</span> to <span id="showingEnd">@Model.Count()</span> of <span id="totalCount">@Model.Count()</span> entries
+            </div>
+            <div>
+                <select id="rowsPerPage" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                </select>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-images"></i>
+            <h5>No Sliders Yet</h5>
+            <p>Create your first slider to showcase content</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create First Slider
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let allRows = [];
+        let filteredRows = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            collectRows();
+            updateTable();
+        });
+        
+        function collectRows() {
+            const tbody = document.querySelector('#sliderTable tbody');
+            if (tbody) {
+                allRows = Array.from(tbody.querySelectorAll('tr'));
+                filteredRows = [...allRows];
+            }
+        }
+        
+        function updateTable() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            
+            filteredRows = allRows.filter(row => {
+                const title = row.dataset.title || '';
+                const status = row.dataset.status || '';
+                
+                const matchesSearch = title.includes(searchTerm);
+                const matchesStatus = !statusFilter || status === statusFilter;
+                
+                return matchesSearch && matchesStatus;
+            });
+            
+            renderTable();
+        }
+        
+        function renderTable() {
+            const tbody = document.querySelector('#sliderTable tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h5>No Results Found</h5>
+                                <p>Try adjusting your search or filter criteria</p>
+                                <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filteredRows.forEach(row => {
+                    tbody.appendChild(row.cloneNode(true));
+                });
+            }
+            
+            updatePaginationInfo();
+        }
+        
+        function updatePaginationInfo() {
+            const total = allRows.length;
+            const showing = filteredRows.length;
+            
+            document.getElementById('showingStart').textContent = showing > 0 ? 1 : 0;
+            document.getElementById('showingEnd').textContent = showing;
+            document.getElementById('totalCount').textContent = total;
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            updateTable();
+        }
+        
+        // Search on keyup
+        document.getElementById('searchInput')?.addEventListener('keyup', updateTable);
+        document.getElementById('statusFilter')?.addEventListener('change', updateTable);
+        
+        // Select All
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBulkActions();
+        }
+        
+        function updateBulkActions() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = checkedBoxes.length === 0;
+            }
+        }
+        
+        // Bulk Delete
+        function bulkDelete() {
+            const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            if (checkedIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${checkedIds.length} sliders?`)) {
+                return;
+            }
+            
+            showToast('Bulk delete feature coming soon!', 'warning');
+        }
+        
+        // Single Delete
+        function deleteSlider(id, title) {
+            if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+                return;
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("Delete", "Slider")';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id';
+            input.value = id;
+            form.appendChild(input);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+}

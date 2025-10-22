@@ -1,0 +1,292 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Dashboard</li>";
+    var latestProducts = ViewBag.LatestProducts as List<Etic.Entities.Product> ?? new List<Etic.Entities.Product>();
+    var lowStockProducts = ViewBag.LowStockProducts as List<Etic.Entities.Product> ?? new List<Etic.Entities.Product>();
+}
+
+<!-- Metric Cards -->
+<div class="row g-4 mb-4">
+    <!-- Total Orders -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon primary">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div class="metric-value">@(ViewBag.TotalOrders ?? 0)</div>
+            <div class="metric-label">Total Orders</div>
+        </div>
+    </div>
+    
+    <!-- New Orders -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon success">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="metric-value">@(ViewBag.NewOrders ?? 0)</div>
+            <div class="metric-label">New Orders</div>
+        </div>
+    </div>
+    
+    <!-- Delivered Orders -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon info">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="metric-value">@(ViewBag.DeliveredOrders ?? 0)</div>
+            <div class="metric-label">Delivered Orders</div>
+        </div>
+    </div>
+    
+    <!-- Cancelled Orders -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon danger">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="metric-value">@(ViewBag.CancelledOrders ?? 0)</div>
+            <div class="metric-label">Cancelled Orders</div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row -->
+<div class="row g-4 mb-4">
+    <!-- Total Products -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon primary">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="metric-value">@ViewBag.ProductCount</div>
+            <div class="metric-label">Total Products</div>
+        </div>
+    </div>
+    
+    <!-- Categories -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon warning">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="metric-value">@ViewBag.CategoryCount</div>
+            <div class="metric-label">Categories</div>
+        </div>
+    </div>
+    
+    <!-- Sliders -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon info">
+                <i class="fas fa-images"></i>
+            </div>
+            <div class="metric-value">@ViewBag.SliderCount</div>
+            <div class="metric-label">Sliders</div>
+        </div>
+    </div>
+    
+    <!-- Stock Alert -->
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="metric-value">@ViewBag.OutOfStockCount</div>
+            <div class="metric-label">Low Stock Alert</div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest Products & Low Stock -->
+<div class="row g-4">
+    <!-- Latest Products -->
+    <div class="col-md-6">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">Latest Products</h6>
+            </div>
+            
+            @if (latestProducts != null && latestProducts.Any())
+            {
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in latestProducts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (product.Images != null && product.Images.Any())
+                                        {
+                                            <img src="@product.Images.First().ImageUrl" alt="@product.Name" 
+                                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; margin-right: 12px;" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 40px; height: 40px; background: #F3F4F6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <div style="font-weight: 500;">@product.Name</div>
+                                            <div style="font-size: 12px; color: #6B7280;">@product.CreatedDate.ToString("MMM dd, yyyy")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="font-weight: 500;">₺@product.Price.ToString("N2")</td>
+                                <td>
+                                    @if (product.Stock > 10)
+                                    {
+                                        <span class="badge badge-success">@product.Stock</span>
+                                    }
+                                    else if (product.Stock > 0)
+                                    {
+                                        <span class="badge badge-warning">@product.Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Out of Stock</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <h5>No Products Yet</h5>
+                    <p>Add your first product to get started</p>
+                    <a asp-area="Admin" asp-controller="Product" asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Product
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- Low Stock Products -->
+    <div class="col-md-6">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">Low Stock Alert</h6>
+            </div>
+            
+            @if (lowStockProducts != null && lowStockProducts.Any())
+            {
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in lowStockProducts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (product.Images != null && product.Images.Any())
+                                        {
+                                            <img src="@product.Images.First().ImageUrl" alt="@product.Name" 
+                                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; margin-right: 12px;" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 40px; height: 40px; background: #F3F4F6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                        }
+                                        <div style="font-weight: 500;">@product.Name</div>
+                                    </div>
+                                </td>
+                                <td style="font-weight: 500;">₺@product.Price.ToString("N2")</td>
+                                <td>
+                                    @if (product.Stock <= 3)
+                                    {
+                                        <span class="badge badge-danger">@product.Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning">@product.Stock</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-check-circle" style="color: var(--success); opacity: 0.5;"></i>
+                    <h5>All Good!</h5>
+                    <p>All products have sufficient stock</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">Quick Actions</h6>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <a asp-area="Admin" asp-controller="Product" asp-action="Create" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-plus d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">Add Product</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a asp-area="Admin" asp-controller="Category" asp-action="Create" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-folder-plus d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">Add Category</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a asp-area="Admin" asp-controller="Slider" asp-action="Create" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-image d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">Add Slider</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a asp-area="Admin" asp-controller="Product" asp-action="Index" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-list d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">View Products</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a asp-area="Admin" asp-controller="Category" asp-action="Index" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-th-list d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">View Categories</div>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a asp-area="" asp-controller="Home" asp-action="Index" target="_blank" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-external-link-alt d-block mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">View Site</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

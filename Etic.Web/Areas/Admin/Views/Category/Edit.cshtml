@@ -1,0 +1,245 @@
+@model Etic.Entities.Category
+
+@{
+    ViewData["Title"] = "Edit Category";
+    ViewData["Breadcrumb"] = $"<li class=\"breadcrumb-item\"><a asp-action=\"Index\">Categories</a></li><li class=\"breadcrumb-item active\">Edit: {Model.Name}</li>";
+}
+
+<!-- Form Container -->
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <form asp-area="Admin" asp-action="Edit" method="post" id="categoryForm">
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="CreatedDate" type="hidden" />
+            <input asp-for="IsDeleted" type="hidden" />
+            
+            <!-- Main Card -->
+            <div class="data-table mb-4">
+                <div class="table-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0" style="font-weight: 600;">
+                            <i class="fas fa-folder-open me-2" style="color: var(--warning);"></i>Category Information
+                        </h6>
+                        <span class="badge badge-info">
+                            <i class="fas fa-hashtag me-1"></i>ID: @Model.Id
+                        </span>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="mb-4">
+                        <label asp-for="Name" class="form-label" style="font-weight: 500; color: var(--dark);">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Name" class="form-control form-control-lg" 
+                               id="categoryName"
+                               style="border-radius: 8px; border: 1px solid var(--gray-300); padding: 12px 16px;" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="SeoLink" class="form-label" style="font-weight: 500; color: var(--dark);">
+                            SEO URL Slug <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="SeoLink" class="form-control form-control-lg" 
+                                   id="seoLinkInput"
+                                   style="border-radius: 8px 0 0 8px; border: 1px solid var(--gray-300); padding: 12px 16px;" />
+                            <button type="button" class="btn btn-outline-primary" id="generateSlug" 
+                                    style="border-radius: 0 8px 8px 0; border-left: none;">
+                                <i class="fas fa-magic me-1"></i>Regenerate
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Use lowercase letters, numbers and dashes only
+                            </small>
+                            <small id="slugStatus" class="text-muted"></small>
+                        </div>
+                        <span asp-validation-for="SeoLink" class="text-danger small"></span>
+                    </div>
+
+                    <!-- SEO Preview -->
+                    <div style="background: var(--light-gray); padding: 16px; border-radius: 8px; border-left: 4px solid var(--warning);">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-link me-3 mt-1" style="color: var(--warning);"></i>
+                            <div style="flex: 1;">
+                                <small class="text-muted d-block mb-1">URL Preview:</small>
+                                <code id="urlPreview" style="font-size: 13px; color: var(--warning);">yoursite.com/category/@Model.SeoLink</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="data-table mb-4">
+                <div class="table-header">
+                    <h6 class="mb-0" style="font-weight: 600;">
+                        <i class="fas fa-info-circle me-2" style="color: var(--info);"></i>Metadata
+                    </h6>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Created Date</label>
+                            <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                                <i class="fas fa-calendar me-2" style="color: var(--gray);"></i>@Model.CreatedDate.ToString("MMMM dd, yyyy")
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Last Updated</label>
+                            <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                                <i class="fas fa-clock me-2" style="color: var(--gray);"></i>
+                                @if (Model.UpdatedDate.HasValue)
+                                {
+                                    @Model.UpdatedDate.Value.ToString("MMMM dd, yyyy")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Never</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sticky Form Footer -->
+<div class="form-footer">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center" style="color: var(--gray-600);">
+                    <i class="fas fa-edit me-2"></i>
+                    <span id="saveStatus">Editing "@Model.Name"</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-danger">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
+                    <button type="submit" form="categoryForm" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameInput = document.getElementById('categoryName');
+            const seoLinkInput = document.getElementById('seoLinkInput');
+            const generateSlugBtn = document.getElementById('generateSlug');
+            const urlPreview = document.getElementById('urlPreview');
+            const slugStatus = document.getElementById('slugStatus');
+            const saveStatus = document.getElementById('saveStatus');
+            const originalName = '@Model.Name';
+            const categoryId = @Model.Id;
+            
+            // Slug input
+            seoLinkInput.addEventListener('input', function() {
+                updateUrlPreview();
+                validateSlug();
+            });
+            
+            // Name input
+            nameInput.addEventListener('input', function() {
+                updateSaveStatus();
+            });
+            
+            // Generate slug button
+            generateSlugBtn.addEventListener('click', function() {
+                generateSlug();
+            });
+            
+            function generateSlug() {
+                const name = nameInput.value;
+                if (name) {
+                    const slug = name
+                        .toLowerCase()
+                        .replace(/ğ/g, 'g')
+                        .replace(/ü/g, 'u')
+                        .replace(/ş/g, 's')
+                        .replace(/ı/g, 'i')
+                        .replace(/ö/g, 'o')
+                        .replace(/ç/g, 'c')
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                    
+                    seoLinkInput.value = slug;
+                    updateUrlPreview();
+                    validateSlug();
+                }
+            }
+            
+            function updateUrlPreview() {
+                const slug = seoLinkInput.value || '';
+                urlPreview.textContent = 'yoursite.com/category/' + (slug || '[slug]');
+            }
+            
+            function validateSlug() {
+                const slug = seoLinkInput.value;
+                
+                if (!slug) {
+                    slugStatus.textContent = '';
+                    seoLinkInput.classList.remove('is-valid', 'is-invalid');
+                    return;
+                }
+                
+                const isValid = /^[a-z0-9-]+$/.test(slug) && !slug.startsWith('-') && !slug.endsWith('-');
+                
+                if (isValid) {
+                    seoLinkInput.classList.remove('is-invalid');
+                    seoLinkInput.classList.add('is-valid');
+                    slugStatus.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>Valid URL';
+                    
+                    // Check uniqueness via AJAX
+                    checkSlugUniqueness(slug);
+                } else {
+                    seoLinkInput.classList.remove('is-valid');
+                    seoLinkInput.classList.add('is-invalid');
+                    slugStatus.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Invalid format';
+                }
+            }
+            
+            function checkSlugUniqueness(slug) {
+                fetch('@Url.Action("CheckSlug", "Category")?seoLink=' + encodeURIComponent(slug) + '&id=' + categoryId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            seoLinkInput.classList.remove('is-valid');
+                            seoLinkInput.classList.add('is-invalid');
+                            slugStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Already exists';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking slug:', error);
+                    });
+            }
+            
+            function updateSaveStatus() {
+                const name = nameInput.value.trim();
+                if (name && name !== originalName) {
+                    saveStatus.innerHTML = `<i class="fas fa-exclamation-circle text-warning me-2"></i>Unsaved changes`;
+                } else {
+                    saveStatus.innerHTML = '<i class="fas fa-edit me-2"></i>Editing "' + originalName + '"';
+                }
+            }
+            
+            // Initial validation
+            updateUrlPreview();
+            validateSlug();
+        });
+    </script>
+}

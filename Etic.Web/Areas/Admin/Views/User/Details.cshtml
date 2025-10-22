@@ -1,0 +1,213 @@
+@model Etic.Entities.User
+
+@{
+    ViewData["Title"] = "User Details";
+    ViewData["Breadcrumb"] = $"<li class=\"breadcrumb-item\"><a asp-action=\"Index\">Users</a></li><li class=\"breadcrumb-item active\">{Model.FullName}</li>";
+}
+
+<!-- User Profile Card -->
+<div class="row g-4">
+    <!-- Profile Information -->
+    <div class="col-md-4">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-user me-2" style="color: var(--primary);"></i>Profile
+                </h6>
+            </div>
+            <div class="p-4 text-center">
+                <div style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-weight: 700; font-size: 48px;">
+                    @Model.FirstName.Substring(0, 1).ToUpper()@Model.LastName.Substring(0, 1).ToUpper()
+                </div>
+                <h5 style="font-weight: 600; margin-bottom: 4px;">@Model.FullName</h5>
+                <p class="text-muted mb-3">@Model.Email</p>
+                
+                @if (Model.Status == Etic.Entities.Enums.UserStatus.Active)
+                {
+                    <span class="badge badge-success">
+                        <i class="fas fa-check-circle me-1"></i>Active
+                    </span>
+                }
+                else
+                {
+                    <span class="badge badge-danger">
+                        <i class="fas fa-times-circle me-1"></i>Inactive
+                    </span>
+                }
+                
+                @if (Model.IsAdmin)
+                {
+                    <span class="badge badge-info ms-2">
+                        <i class="fas fa-shield-alt me-1"></i>Admin
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Information -->
+    <div class="col-md-8">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-info-circle me-2" style="color: var(--info);"></i>Information
+                </h6>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">First Name</label>
+                        <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                            @Model.FirstName
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Last Name</label>
+                        <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                            @Model.LastName
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label text-muted small">Email Address</label>
+                        <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                            <i class="fas fa-envelope me-2" style="color: var(--gray);"></i>@Model.Email
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Register Date</label>
+                        <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-weight: 500;">
+                            <i class="fas fa-calendar me-2" style="color: var(--gray);"></i>@Model.RegisterDate.ToString("MMMM dd, yyyy")
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">User ID</label>
+                        <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-family: monospace;">
+                            #@Model.Id
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity & Statistics -->
+<div class="row g-4 mt-2">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon primary">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="metric-value">@(Model.Orders?.Count ?? 0)</div>
+            <div class="metric-label">Total Orders</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+                <div class="metric-value">@(Model.Orders?.Where(o => o.Status == Etic.Entities.Enums.OrderStatus.Delivered).Count() ?? 0)</div>
+            <div class="metric-label">Completed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+                <div class="metric-value">@(Model.Orders?.Where(o => o.Status == Etic.Entities.Enums.OrderStatus.Pending).Count() ?? 0)</div>
+            <div class="metric-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-icon danger">
+                <i class="fas fa-ban"></i>
+            </div>
+                <div class="metric-value">@(Model.Orders?.Where(o => o.Status == Etic.Entities.Enums.OrderStatus.Cancelled).Count() ?? 0)</div>
+            <div class="metric-label">Cancelled</div>
+        </div>
+    </div>
+</div>
+
+<!-- Order History -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-history me-2" style="color: var(--primary);"></i>Order History
+                </h6>
+            </div>
+            
+            @if (Model.Orders != null && Model.Orders.Any())
+            {
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.Orders.OrderByDescending(o => o.CreateDate))
+                        {
+                            <tr>
+                                <td style="font-family: monospace; font-weight: 500;">#@order.Id</td>
+                                <td style="color: var(--gray);">@order.CreateDate.ToString("MMM dd, yyyy")</td>
+                                <td>@(order.OrderProducts?.Count ?? 0) items</td>
+                                <td style="font-weight: 600;">₺@order.TotalAmount.ToString("N2")</td>
+                                <td>
+                                    @switch (order.Status)
+                                    {
+                                        case Etic.Entities.Enums.OrderStatus.Pending:
+                                            <span class="badge badge-warning">Pending</span>
+                                            break;
+                                        case Etic.Entities.Enums.OrderStatus.Confirmed:
+                                            <span class="badge badge-info">Confirmed</span>
+                                            break;
+                                        case Etic.Entities.Enums.OrderStatus.Shipped:
+                                            <span class="badge badge-info">Shipped</span>
+                                            break;
+                                        case Etic.Entities.Enums.OrderStatus.Delivered:
+                                            <span class="badge badge-success">Delivered</span>
+                                            break;
+                                        case Etic.Entities.Enums.OrderStatus.Cancelled:
+                                            <span class="badge badge-danger">Cancelled</span>
+                                            break;
+                                        case Etic.Entities.Enums.OrderStatus.Returned:
+                                            <span class="badge badge-warning">Returned</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h5>No Orders Yet</h5>
+                    <p>This user hasn't placed any orders</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i>Back to List
+            </a>
+        </div>
+    </div>
+</div>

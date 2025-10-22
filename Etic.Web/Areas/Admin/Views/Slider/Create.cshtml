@@ -1,0 +1,259 @@
+@model Etic.Entities.Slider
+
+@{
+    ViewData["Title"] = "Create Slider";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item\"><a asp-action=\"Index\">Sliders</a></li><li class=\"breadcrumb-item active\">Create New</li>";
+}
+
+<!-- Form Container -->
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <form asp-area="Admin" asp-action="Create" method="post" enctype="multipart/form-data" id="sliderForm">
+            
+            <div class="row g-4">
+                <!-- Left Column - Main Info -->
+                <div class="col-md-8">
+                    <!-- Basic Information -->
+                    <div class="data-table mb-4">
+                        <div class="table-header">
+                            <h6 class="mb-0" style="font-weight: 600;">
+                                <i class="fas fa-info-circle me-2" style="color: var(--primary);"></i>Slider Information
+                            </h6>
+                        </div>
+                        <div class="p-4">
+                            <div class="mb-4">
+                                <label asp-for="Name" class="form-label" style="font-weight: 500; color: var(--dark);">
+                                    Internal Name <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Name" class="form-control form-control-lg" 
+                                       placeholder="e.g. Homepage Banner 1 (for management)" 
+                                       style="border-radius: 8px; border: 1px solid var(--gray-300); padding: 12px 16px;" />
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>This name is for internal use only
+                                </small>
+                                <span asp-validation-for="Name" class="text-danger small d-block"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Title" class="form-label" style="font-weight: 500; color: var(--dark);">
+                                    Display Title
+                                </label>
+                                <input asp-for="Title" class="form-control form-control-lg" 
+                                       placeholder="e.g. Summer Sale 2024" 
+                                       style="border-radius: 8px; border: 1px solid var(--gray-300); padding: 12px 16px;" />
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Shown on the slider (optional)
+                                </small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label" style="font-weight: 500; color: var(--dark);">
+                                    Description / Subtitle
+                                </label>
+                                <textarea asp-for="Description" class="form-control" rows="3"
+                                          placeholder="Brief description or call-to-action..."
+                                          style="border-radius: 8px; border: 1px solid var(--gray-300); padding: 12px 16px;"></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Link" class="form-label" style="font-weight: 500; color: var(--dark);">
+                                    Target Link (Optional)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="border-radius: 8px 0 0 8px; background: var(--light-gray); border: 1px solid var(--gray-300);">
+                                        <i class="fas fa-link"></i>
+                                    </span>
+                                    <input asp-for="Link" class="form-control" 
+                                           placeholder="/category/electronics or https://..." 
+                                           style="border-radius: 0 8px 8px 0; border: 1px solid var(--gray-300); padding: 12px 16px;" />
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Where users go when they click the slider
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="data-table mb-4">
+                        <div class="table-header">
+                            <h6 class="mb-0" style="font-weight: 600;">
+                                <i class="fas fa-image me-2" style="color: var(--success);"></i>Slider Image <span class="text-danger">*</span>
+                            </h6>
+                        </div>
+                        <div class="p-4">
+                            <div class="border rounded" style="border: 2px dashed var(--gray-300) !important; padding: 40px; text-align: center; background: var(--light-gray);">
+                                <i class="fas fa-image" style="font-size: 48px; color: var(--gray-400); margin-bottom: 16px;"></i>
+                                <p style="color: var(--gray-600); margin-bottom: 16px;">
+                                    <strong>Upload slider image</strong>
+                                </p>
+                                <input type="file" name="Image" class="form-control" accept="image/*" id="imageUpload" required 
+                                       style="display: none;" />
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('imageUpload').click();">
+                                    <i class="fas fa-upload me-2"></i>Choose Image
+                                </button>
+                                <p class="text-muted small mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>Recommended: 1920x600px, Max 5MB, JPG/PNG/WEBP
+                                </p>
+                            </div>
+                            <div id="imagePreview" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Settings -->
+                <div class="col-md-4">
+                    <!-- Display Order -->
+                    <div class="data-table mb-4">
+                        <div class="table-header">
+                            <h6 class="mb-0" style="font-weight: 600;">
+                                <i class="fas fa-sort-numeric-down me-2" style="color: var(--info);"></i>Display Order
+                            </h6>
+                        </div>
+                        <div class="p-4">
+                            <div class="mb-3">
+                                <label asp-for="Sort" class="form-label" style="font-weight: 500; color: var(--dark);">
+                                    Sort Order <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Sort" type="number" class="form-control form-control-lg text-center" 
+                                       value="1" 
+                                       style="border-radius: 8px; border: 1px solid var(--gray-300); padding: 12px 16px; font-size: 24px; font-weight: 700;" />
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>Lower numbers appear first
+                                </small>
+                            </div>
+                            
+                            <div style="background: var(--light-gray); padding: 16px; border-radius: 8px; margin-top: 16px;">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span style="color: var(--gray-600); font-size: 13px;">Current Position:</span>
+                                    <span class="badge badge-primary" id="orderBadge" style="font-size: 14px;">1st</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Publishing -->
+                    <div class="data-table mb-4">
+                        <div class="table-header">
+                            <h6 class="mb-0" style="font-weight: 600;">
+                                <i class="fas fa-globe me-2" style="color: var(--success);"></i>Publishing
+                            </h6>
+                        </div>
+                        <div class="p-4">
+                            <div class="form-check form-switch" style="padding-left: 0;">
+                                <label class="form-check-label d-flex align-items-center" style="cursor: pointer;">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked 
+                                           style="width: 48px; height: 24px; margin-right: 12px; cursor: pointer;" />
+                                    <div>
+                                        <strong>Active</strong>
+                                        <p class="text-muted small mb-0">Show this slider on the website</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(99, 102, 241, 0.1)); padding: 20px; border-radius: 12px; border-left: 4px solid var(--primary);">
+                        <h6 style="font-weight: 600; margin-bottom: 12px; color: var(--primary);">
+                            <i class="fas fa-lightbulb me-2"></i>Design Tips
+                        </h6>
+                        <ul class="mb-0" style="font-size: 13px; color: var(--gray-600);">
+                            <li class="mb-2">Use high-quality images</li>
+                            <li class="mb-2">Keep text readable on image</li>
+                            <li class="mb-2">Optimize image size for fast loading</li>
+                            <li class="mb-0">Test on different screen sizes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sticky Form Footer -->
+<div class="form-footer">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center" style="color: var(--gray-600);">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    <span>Creating new slider</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-danger">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </a>
+                    <button type="submit" form="sliderForm" class="btn btn-primary">
+                        <i class="fas fa-check me-1"></i>Create Slider
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageUpload = document.getElementById('imageUpload');
+            const imagePreview = document.getElementById('imagePreview');
+            const sortInput = document.querySelector('input[name="Sort"]');
+            const orderBadge = document.getElementById('orderBadge');
+            
+            // Image upload preview
+            imageUpload.addEventListener('change', function(e) {
+                imagePreview.innerHTML = '';
+                
+                const file = e.target.files[0];
+                if (file) {
+                    // Validate file size
+                    if (file.size > 5 * 1024 * 1024) {
+                        imagePreview.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>File too large! Maximum size is 5MB.
+                            </div>
+                        `;
+                        imageUpload.value = '';
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        imagePreview.innerHTML = `
+                            <div class="card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <img src="${e.target.result}" class="card-img-top" style="max-height: 250px; object-fit: cover;">
+                                <div class="card-body" style="background: var(--light-gray);">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <strong style="font-size: 13px;">${file.name}</strong>
+                                        </div>
+                                        <span class="badge badge-info">${(file.size / 1024).toFixed(1)} KB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Sort order badge
+            sortInput.addEventListener('input', function() {
+                const order = parseInt(this.value) || 1;
+                let suffix = 'th';
+                if (order === 1) suffix = 'st';
+                else if (order === 2) suffix = 'nd';
+                else if (order === 3) suffix = 'rd';
+                orderBadge.textContent = order + suffix;
+            });
+        });
+    </script>
+}

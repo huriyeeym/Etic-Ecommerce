@@ -10,17 +10,20 @@ namespace Etic.Web.Areas.Admin.Controllers
         private readonly IProductService _productService;
         private readonly IUserService _userService;
         private readonly ISliderService _sliderService;
+        private readonly IOrderService _orderService;
 
         public HomeController(
             ICategoryService categoryService,
             IProductService productService,
             IUserService userService,
-            ISliderService sliderService)
+            ISliderService sliderService,
+            IOrderService orderService)
         {
             _categoryService = categoryService;
             _productService = productService;
             _userService = userService;
             _sliderService = sliderService;
+            _orderService = orderService;
         }
 
         public IActionResult Index()
@@ -35,12 +38,12 @@ namespace Etic.Web.Areas.Admin.Controllers
             ViewBag.CategoryCount = _categoryService.GetAllCategories().Where(c => !c.IsDeleted).Count();
             ViewBag.SliderCount = _sliderService.GetAll().Where(s => !s.IsDeleted).Count();
             
-            // Sipariş Metrikleri (Şimdilik mock data - sipariş sistemi eklenince güncellenecek)
-            ViewBag.TotalOrders = 0;
-            ViewBag.MonthlyOrders = 0;
-            ViewBag.NewOrders = 0;
-            ViewBag.DeliveredOrders = 0;
-            ViewBag.CancelledOrders = 0;
+            // Sipariş Metrikleri (Gerçek Data - OrderService'ten)
+            ViewBag.TotalOrders = _orderService.GetTotalCount();
+            ViewBag.MonthlyOrders = _orderService.GetThisMonthOrders().Count;
+            ViewBag.NewOrders = _orderService.GetCountByStatus(Etic.Entities.Enums.OrderStatus.Pending);
+            ViewBag.DeliveredOrders = _orderService.GetCountByStatus(Etic.Entities.Enums.OrderStatus.Delivered);
+            ViewBag.CancelledOrders = _orderService.GetCountByStatus(Etic.Entities.Enums.OrderStatus.Cancelled);
             
             // Son eklenen ürünler
             var latestProducts = allProducts

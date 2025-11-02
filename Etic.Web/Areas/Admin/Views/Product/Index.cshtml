@@ -112,7 +112,7 @@
                             <div style="font-size: 12px;">@product.CreatedDate.ToString("hh:mm tt")</div>
                         </td>
                         <td>
-                            <div class="editable-cell" data-product-id="@product.Id" data-field="stock" data-value="@product.Stock">
+                            <div class="editable-cell" data-product-id="@product.Id" data-field="stock" data-value="@product.Stock" style="cursor: pointer;">
                                 @if (product.Stock > 10)
                                 {
                                     <span class="badge badge-success stock-badge">
@@ -201,6 +201,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             collectRows();
             updateTable();
+            initInlineEditing();
         });
         
         function collectRows() {
@@ -341,9 +342,10 @@
         }
 
         // Inline Editing
-        document.querySelectorAll('.editable-cell').forEach(cell => {
-            cell.addEventListener('click', function(e) {
-                if (this.querySelector('input')) return; // Already editing
+        function initInlineEditing() {
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('click', function(e) {
+                    if (this.querySelector('input')) return; // Already editing
                 
                 const productId = this.dataset.productId;
                 const field = this.dataset.field;
@@ -393,6 +395,7 @@
                 input.select();
             });
         });
+        }
         
         function updateStock(productId, newStock, cell) {
             if (newStock < 0) {

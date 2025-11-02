@@ -72,6 +72,28 @@ namespace Etic.Business.Services
         {
             return _productDal.GetAll(x => !x.IsDeleted && x.Stock == 0).Count;
         }
+
+        public void UpdateStock(int productId, int newStock)
+        {
+            var product = GetById(productId);
+            if (product != null)
+            {
+                product.Stock = newStock;
+                product.UpdatedDate = DateTime.Now;
+                _productDal.Update(product);
+            }
+        }
+
+        public void UpdatePrice(int productId, decimal newPrice)
+        {
+            var product = GetById(productId);
+            if (product != null)
+            {
+                product.Price = newPrice;
+                product.UpdatedDate = DateTime.Now;
+                _productDal.Update(product);
+            }
+        }
     }
 
     public interface IProductService
@@ -86,5 +108,7 @@ namespace Etic.Business.Services
         int GetTotalCount();
         int GetActiveCount();
         int GetOutOfStockCount();
+        void UpdateStock(int productId, int newStock);
+        void UpdatePrice(int productId, decimal newPrice);
     }
 }

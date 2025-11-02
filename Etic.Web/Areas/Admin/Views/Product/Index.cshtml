@@ -112,27 +112,33 @@
                             <div style="font-size: 12px;">@product.CreatedDate.ToString("hh:mm tt")</div>
                         </td>
                         <td>
-                            @if (product.Stock > 10)
-                            {
-                                <span class="badge badge-success">
-                                    <i class="fas fa-check-circle me-1"></i>@product.Stock in stock
-                                </span>
-                            }
-                            else if (product.Stock > 0)
-                            {
-                                <span class="badge badge-warning">
-                                    <i class="fas fa-exclamation-triangle me-1"></i>@product.Stock in stock
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-danger">
-                                    <i class="fas fa-times-circle me-1"></i>Out of stock
-                                </span>
-                            }
+                            <div class="editable-cell" data-product-id="@product.Id" data-field="stock" data-value="@product.Stock">
+                                @if (product.Stock > 10)
+                                {
+                                    <span class="badge badge-success stock-badge">
+                                        <i class="fas fa-check-circle me-1"></i><span class="stock-value">@product.Stock</span> in stock
+                                    </span>
+                                }
+                                else if (product.Stock > 0)
+                                {
+                                    <span class="badge badge-warning stock-badge">
+                                        <i class="fas fa-exclamation-triangle me-1"></i><span class="stock-value">@product.Stock</span> in stock
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger stock-badge">
+                                        <i class="fas fa-times-circle me-1"></i><span class="stock-value">Out of stock</span>
+                                    </span>
+                                }
+                                <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); cursor: pointer; opacity: 0.6;"></i>
+                            </div>
                         </td>
-                        <td style="font-weight: 600; color: var(--dark);">
-                            ₺@product.Price.ToString("N2")
+                        <td>
+                            <div class="editable-cell" data-product-id="@product.Id" data-field="price" data-value="@product.Price" style="font-weight: 600; color: var(--dark); cursor: pointer;">
+                                <span class="price-value">₺@product.Price.ToString("N2")</span>
+                                <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); opacity: 0.6;"></i>
+                            </div>
                         </td>
                         <td>
                             @if (product.IsActive)
@@ -332,6 +338,168 @@
             
             document.body.appendChild(form);
             form.submit();
+        }
+
+        // Inline Editing
+        document.querySelectorAll('.editable-cell').forEach(cell => {
+            cell.addEventListener('click', function(e) {
+                if (this.querySelector('input')) return; // Already editing
+                
+                const productId = this.dataset.productId;
+                const field = this.dataset.field;
+                const currentValue = this.dataset.value;
+                
+                // Create input
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = field === 'price' ? parseFloat(currentValue) : parseInt(currentValue);
+                input.style.width = field === 'price' ? '100px' : '60px';
+                input.style.padding = '4px 8px';
+                input.style.border = '2px solid var(--primary)';
+                input.style.borderRadius = '4px';
+                input.className = 'form-control form-control-sm';
+                
+                if (field === 'price') {
+                    input.step = '0.01';
+                    input.min = '0';
+                }
+                
+                // Save on Enter or blur
+                const saveEdit = () => {
+                    const newValue = input.value;
+                    
+                    if (field === 'stock') {
+                        updateStock(productId, parseInt(newValue), this);
+                    } else if (field === 'price') {
+                        updatePrice(productId, parseFloat(newValue), this);
+                    }
+                };
+                
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveEdit();
+                    } else if (e.key === 'Escape') {
+                        restoreCell(this, currentValue, field);
+                    }
+                });
+                
+                input.addEventListener('blur', saveEdit);
+                
+                // Replace content with input
+                this.innerHTML = '';
+                this.appendChild(input);
+                input.focus();
+                input.select();
+            });
+        });
+        
+        function updateStock(productId, newStock, cell) {
+            if (newStock < 0) {
+                showToast('Stock cannot be negative', 'error');
+                restoreCell(cell, cell.dataset.value, 'stock');
+                return;
+            }
+            
+            $.ajax({
+                url: '@Url.Action("UpdateStock", "Product")',
+                method: 'POST',
+                data: { productId: productId, newStock: newStock },
+                success: function(result) {
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        cell.dataset.value = newStock;
+                        
+                        // Update badge
+                        let badgeClass = newStock > 10 ? 'success' : (newStock > 0 ? 'warning' : 'danger');
+                        let icon = newStock > 10 ? 'check-circle' : (newStock > 0 ? 'exclamation-triangle' : 'times-circle');
+                        let text = newStock > 0 ? `${newStock} in stock` : 'Out of stock';
+                        
+                        cell.innerHTML = `
+                            <span class="badge badge-${badgeClass} stock-badge">
+                                <i class="fas fa-${icon} me-1"></i><span class="stock-value">${text}</span>
+                            </span>
+                            <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); cursor: pointer; opacity: 0.6;"></i>
+                        `;
+                        
+                        // Update row data attribute for filtering
+                        const row = cell.closest('tr');
+                        const stockStatus = newStock > 10 ? 'instock' : (newStock > 0 ? 'lowstock' : 'outofstock');
+                        row.dataset.stock = stockStatus;
+                    } else {
+                        showToast(result.message, 'error');
+                        restoreCell(cell, cell.dataset.value, 'stock');
+                    }
+                },
+                error: function() {
+                    showToast('Failed to update stock', 'error');
+                    restoreCell(cell, cell.dataset.value, 'stock');
+                }
+            });
+        }
+        
+        function updatePrice(productId, newPrice, cell) {
+            if (newPrice <= 0) {
+                showToast('Price must be greater than zero', 'error');
+                restoreCell(cell, cell.dataset.value, 'price');
+                return;
+            }
+            
+            $.ajax({
+                url: '@Url.Action("UpdatePrice", "Product")',
+                method: 'POST',
+                data: { productId: productId, newPrice: newPrice },
+                success: function(result) {
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        cell.dataset.value = newPrice;
+                        
+                        // Update price display
+                        const formatted = new Intl.NumberFormat('tr-TR', { 
+                            minimumFractionDigits: 2, 
+                            maximumFractionDigits: 2 
+                        }).format(newPrice);
+                        
+                        cell.innerHTML = `
+                            <span class="price-value">₺${formatted}</span>
+                            <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); opacity: 0.6;"></i>
+                        `;
+                    } else {
+                        showToast(result.message, 'error');
+                        restoreCell(cell, cell.dataset.value, 'price');
+                    }
+                },
+                error: function() {
+                    showToast('Failed to update price', 'error');
+                    restoreCell(cell, cell.dataset.value, 'price');
+                }
+            });
+        }
+        
+        function restoreCell(cell, value, field) {
+            if (field === 'stock') {
+                const stockValue = parseInt(value);
+                let badgeClass = stockValue > 10 ? 'success' : (stockValue > 0 ? 'warning' : 'danger');
+                let icon = stockValue > 10 ? 'check-circle' : (stockValue > 0 ? 'exclamation-triangle' : 'times-circle');
+                let text = stockValue > 0 ? `${stockValue} in stock` : 'Out of stock';
+                
+                cell.innerHTML = `
+                    <span class="badge badge-${badgeClass} stock-badge">
+                        <i class="fas fa-${icon} me-1"></i><span class="stock-value">${text}</span>
+                    </span>
+                    <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); cursor: pointer; opacity: 0.6;"></i>
+                `;
+            } else if (field === 'price') {
+                const formatted = new Intl.NumberFormat('tr-TR', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                }).format(value);
+                
+                cell.innerHTML = `
+                    <span class="price-value">₺${formatted}</span>
+                    <i class="fas fa-edit edit-icon ms-2" style="font-size: 12px; color: var(--gray); opacity: 0.6;"></i>
+                `;
+            }
         }
     </script>
 }

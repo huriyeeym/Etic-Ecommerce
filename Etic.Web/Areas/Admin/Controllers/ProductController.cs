@@ -154,6 +154,32 @@ namespace Etic.Web.Areas.Admin.Controllers
             return Json(new { success = false });
         }
 
+        // Inline Editing - Update Stock
+        [HttpPost]
+        public IActionResult UpdateStock(int productId, int newStock)
+        {
+            if (newStock < 0)
+            {
+                return Json(new { success = false, message = "Stock cannot be negative" });
+            }
+
+            _productService.UpdateStock(productId, newStock);
+            return Json(new { success = true, message = "Stock updated successfully" });
+        }
+
+        // Inline Editing - Update Price
+        [HttpPost]
+        public IActionResult UpdatePrice(int productId, decimal newPrice)
+        {
+            if (newPrice <= 0)
+            {
+                return Json(new { success = false, message = "Price must be greater than zero" });
+            }
+
+            _productService.UpdatePrice(productId, newPrice);
+            return Json(new { success = true, message = "Price updated successfully" });
+        }
+
         // Resim Yükleme Helper
         private async Task UploadImagesAsync(int productId, List<IFormFile> images)
         {

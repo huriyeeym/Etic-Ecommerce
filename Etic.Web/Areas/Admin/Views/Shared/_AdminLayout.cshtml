@@ -581,7 +581,7 @@
                     </a>
                 </div>
                 
-                <a class="nav-link">
+                <a asp-area="Admin" asp-controller="Order" asp-action="Index" class="nav-link">
                     <i class="fas fa-shopping-bag"></i>
                     Orders
                     <span class="badge bg-danger">@(ViewBag.NewOrders ?? 0)</span>

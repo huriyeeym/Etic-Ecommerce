@@ -42,6 +42,11 @@ namespace Etic.Web
             builder.Services.AddScoped<IBasketDal, BasketDal>();
             builder.Services.AddScoped<IBasketProductDal, BasketProductDal>();
 
+            // Order Management
+            builder.Services.AddScoped<IOrdersDal, OrdersDal>();
+            builder.Services.AddScoped<IOrderProductsDal, OrderProductsDal>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+
 
 
             builder.Services.AddScoped<IAuthenticationControllerHandler, AuthenticationControllerHandler>();

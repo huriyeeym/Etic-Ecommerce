@@ -1,0 +1,337 @@
+@model IEnumerable<Etic.Entities.Product>
+
+@{
+    ViewData["Title"] = "Products";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Products</li>";
+}
+
+<!-- Page Actions -->
+<div class="d-flex justify-content-end mb-4">
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Product
+    </a>
+</div>
+
+<!-- Data Table -->
+<div class="data-table">
+    <!-- Table Header with Filters -->
+    <div class="table-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="table-filters">
+                    <div class="filter-input">
+                        <input type="text" id="searchInput" placeholder="Find Product" class="form-control">
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Status</option>
+                            <option value="active">Published</option>
+                            <option value="inactive">Draft</option>
+                        </select>
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="stockFilter" class="form-select">
+                            <option value="">Stock</option>
+                            <option value="instock">In Stock</option>
+                            <option value="lowstock">Low Stock</option>
+                            <option value="outofstock">Out of Stock</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-danger btn-sm" id="bulkDeleteBtn" onclick="bulkDelete()" disabled>
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    @if (Model != null && Model.Any())
+    {
+        <table class="table" id="productTable">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>Product</th>
+                    <th>Create At</th>
+                    <th>Stock</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model)
+                {
+                    var stockStatus = product.Stock > 10 ? "instock" : (product.Stock > 0 ? "lowstock" : "outofstock");
+                    
+                    <tr data-id="@product.Id" 
+                        data-name="@product.Name.ToLower()" 
+                        data-status="@(product.IsActive ? "active" : "inactive")"
+                        data-stock="@stockStatus">
+                        <td>
+                            <input type="checkbox" class="row-checkbox" value="@product.Id" onchange="updateBulkActions()">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                @if (product.Images != null && product.Images.Any())
+                                {
+                                    <img src="@product.Images.First().ImageUrl" alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 12px; border: 1px solid var(--border);" />
+                                }
+                                else
+                                {
+                                    <div style="width: 50px; height: 50px; background: var(--light-gray); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; border: 1px solid var(--border);">
+                                        <i class="fas fa-image" style="color: var(--gray);"></i>
+                                    </div>
+                                }
+                                <div>
+                                    <div style="font-weight: 500; color: var(--dark);">@product.Name</div>
+                                    <div style="font-size: 12px; color: var(--gray);">
+                                        @if (product.ProductCategories != null && product.ProductCategories.Any())
+                                        {
+                                            @string.Join(", ", product.ProductCategories.Select(pc => pc.Category?.Name))
+                                        }
+                                        else
+                                        {
+                                            <span>No Category</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--gray);">
+                            @product.CreatedDate.ToString("MMM dd, yyyy")
+                            <div style="font-size: 12px;">@product.CreatedDate.ToString("hh:mm tt")</div>
+                        </td>
+                        <td>
+                            @if (product.Stock > 10)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle me-1"></i>@product.Stock in stock
+                                </span>
+                            }
+                            else if (product.Stock > 0)
+                            {
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>@product.Stock in stock
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Out of stock
+                                </span>
+                            }
+                        </td>
+                        <td style="font-weight: 600; color: var(--dark);">
+                            ₺@product.Price.ToString("N2")
+                        </td>
+                        <td>
+                            @if (product.IsActive)
+                            {
+                                <span class="badge badge-success">Published</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Draft</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(@product.Id, '@product.Name')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Table Footer -->
+        <div class="table-footer">
+            <div class="pagination-info">
+                Showing <span id="showingStart">1</span> to <span id="showingEnd">@Model.Count()</span> of <span id="totalCount">@Model.Count()</span> entries
+            </div>
+            <div>
+                <select id="rowsPerPage" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateTable()">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <h5>No Products Yet</h5>
+            <p>Create your first product to get started</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create First Product
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let allRows = [];
+        let filteredRows = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            collectRows();
+            updateTable();
+        });
+        
+        function collectRows() {
+            const tbody = document.querySelector('#productTable tbody');
+            if (tbody) {
+                allRows = Array.from(tbody.querySelectorAll('tr'));
+                filteredRows = [...allRows];
+            }
+        }
+        
+        function updateTable() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const stockFilter = document.getElementById('stockFilter')?.value || '';
+            
+            filteredRows = allRows.filter(row => {
+                const name = row.dataset.name || '';
+                const status = row.dataset.status || '';
+                const stock = row.dataset.stock || '';
+                
+                const matchesSearch = name.includes(searchTerm);
+                const matchesStatus = !statusFilter || status === statusFilter;
+                const matchesStock = !stockFilter || stock === stockFilter;
+                
+                return matchesSearch && matchesStatus && matchesStock;
+            });
+            
+            renderTable();
+        }
+        
+        function renderTable() {
+            const tbody = document.querySelector('#productTable tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h5>No Results Found</h5>
+                                <p>Try adjusting your search or filter criteria</p>
+                                <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filteredRows.forEach(row => {
+                    tbody.appendChild(row.cloneNode(true));
+                });
+            }
+            
+            updatePaginationInfo();
+        }
+        
+        function updatePaginationInfo() {
+            const total = allRows.length;
+            const showing = filteredRows.length;
+            
+            document.getElementById('showingStart').textContent = showing > 0 ? 1 : 0;
+            document.getElementById('showingEnd').textContent = showing;
+            document.getElementById('totalCount').textContent = total;
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('stockFilter').value = '';
+            updateTable();
+        }
+        
+        // Search on keyup
+        document.getElementById('searchInput')?.addEventListener('keyup', updateTable);
+        document.getElementById('statusFilter')?.addEventListener('change', updateTable);
+        document.getElementById('stockFilter')?.addEventListener('change', updateTable);
+        
+        // Select All
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBulkActions();
+        }
+        
+        function updateBulkActions() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = checkedBoxes.length === 0;
+            }
+            
+            // Update select all checkbox
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.row-checkbox');
+            if (selectAll && allCheckboxes.length > 0) {
+                selectAll.checked = checkedBoxes.length === allCheckboxes.length;
+            }
+        }
+        
+        // Bulk Delete
+        function bulkDelete() {
+            const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            if (checkedIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${checkedIds.length} products?`)) {
+                return;
+            }
+            
+            showToast('Bulk delete feature coming soon!', 'warning');
+            // TODO: Backend'de BulkDelete endpoint'i eklendiğinde aktif olacak
+        }
+        
+        // Single Delete
+        function deleteProduct(id, name) {
+            if (!confirm(`Are you sure you want to delete "${name}"?`)) {
+                return;
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("Delete", "Product")';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id';
+            input.value = id;
+            form.appendChild(input);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+}

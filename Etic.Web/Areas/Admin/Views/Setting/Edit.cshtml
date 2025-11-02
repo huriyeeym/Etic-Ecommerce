@@ -1,0 +1,52 @@
+@model Etic.Entities.Setting
+
+@{
+    ViewData["Title"] = "Ayar Düzenle";
+}
+
+<div class="mb-4">
+    <a asp-area="Admin" asp-controller="Setting" asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Geri Dön
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-edit"></i> Ayar Düzenle: @Model.Id</h5>
+    </div>
+    <div class="card-body">
+        <form asp-area="Admin" asp-action="Edit" method="post">
+            <input asp-for="Id" type="hidden" />
+
+            <div class="mb-3">
+                <label asp-for="Id" class="form-label">Ayar Anahtarı</label>
+                <input asp-for="Id" class="form-control" readonly style="background-color: #e9ecef;" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SettingValue" class="form-label">Değer *</label>
+                <textarea asp-for="SettingValue" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="SettingValue" class="text-danger"></span>
+                <small class="form-text text-muted">
+                    <i class="fas fa-info-circle"></i> Bu ayarın değerini buradan değiştirebilirsiniz
+                </small>
+            </div>
+
+            <hr />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                </button>
+                <a asp-area="Admin" asp-controller="Setting" asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

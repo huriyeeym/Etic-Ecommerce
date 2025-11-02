@@ -22,10 +22,40 @@ namespace Etic.Business.Services
         {
             return _categoryDal.GetAll();
         }
+
+        public Category GetById(int id)
+        {
+            return _categoryDal.Get(c => c.Id == id);
+        }
+
+        public void Add(Category category)
+        {
+            _categoryDal.Add(category);
+        }
+
+        public void Update(Category category)
+        {
+            _categoryDal.Update(category);
+        }
+
+        public void Delete(int id)
+        {
+            var category = GetById(id);
+            if (category != null)
+            {
+                category.IsDeleted = true;
+                category.DeletedDate = DateTime.Now;
+                _categoryDal.Update(category);
+            }
+        }
     }
 
     public interface ICategoryService
     {
         IList<Category> GetAllCategories();
+        Category GetById(int id);
+        void Add(Category category);
+        void Update(Category category);
+        void Delete(int id);
     }
 }

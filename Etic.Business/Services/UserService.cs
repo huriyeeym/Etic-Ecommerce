@@ -33,11 +33,53 @@ namespace Etic.Business.Services
             user.LoginGuidKey = null;
             _userDal.Update(user);  
         }
+
+        public IList<User> GetAll()
+        {
+            return _userDal.GetAll().Where(u => !u.IsDeleted).ToList();
+        }
+
+        public User GetById(int id)
+        {
+            return _userDal.Get(x => x.Id == id);
+        }
+
+        public void Add(User user)
+        {
+            _userDal.Add(user);
+        }
+
+        public void Update(User user)
+        {
+            _userDal.Update(user);
+        }
+
+        public void Delete(int id)
+        {
+            var user = GetById(id);
+            if (user != null)
+            {
+                user.IsDeleted = true;
+                user.DeletedDate = DateTime.Now;
+                _userDal.Update(user);
+            }
+        }
+
+        public int GetTotalCount()
+        {
+            return _userDal.GetAll().Where(u => !u.IsDeleted).Count();
+        }
     }
     public interface IUserService
     {
         string ChangeGuidKey(User user);
         User GetUserDataWithGuidKey(string guid);
         void ResetUserGuidKey(string guid);
+        IList<User> GetAll();
+        User GetById(int id);
+        void Add(User user);
+        void Update(User user);
+        void Delete(int id);
+        int GetTotalCount();
     }
 }

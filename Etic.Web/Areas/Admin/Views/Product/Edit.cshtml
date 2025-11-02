@@ -1,0 +1,264 @@
+@model Etic.Entities.Product
+
+@{
+    ViewData["Title"] = "Ürün Düzenle";
+    var categories = ViewBag.Categories as IEnumerable<Etic.Entities.Category>;
+    var selectedCategories = ViewBag.SelectedCategories as List<int> ?? new List<int>();
+    var productImages = ViewBag.ProductImages as IEnumerable<Etic.Entities.ProductImage> ?? new List<Etic.Entities.ProductImage>();
+}
+
+<div class="mb-4">
+    <a asp-area="Admin" asp-controller="Product" asp-action="Index" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Geri Dön
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-edit"></i> Ürün Düzenle: @Model.Name</h5>
+    </div>
+    <div class="card-body">
+        <form asp-area="Admin" asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="CreatedDate" type="hidden" />
+            <input asp-for="IsDeleted" type="hidden" />
+            
+            <div class="row">
+                <!-- Sol Kolon -->
+                <div class="col-md-8">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Temel Bilgiler</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label">Ürün Adı *</label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="SeoLink" class="form-label">SEO Link *</label>
+                                <input asp-for="SeoLink" class="form-control" />
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Küçük harf, tire kullanın
+                                </small>
+                                <span asp-validation-for="SeoLink" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Description" class="form-label">Kısa Açıklama</label>
+                                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ProductDescription" class="form-label">Detaylı Açıklama</label>
+                                <textarea asp-for="ProductDescription" class="form-control" rows="5"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Fiyat & Stok</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="Price" class="form-label">Fiyat (₺) *</label>
+                                        <input asp-for="Price" type="number" step="0.01" class="form-control" />
+                                        <span asp-validation-for="Price" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="Stock" class="form-label">Stok Adedi *</label>
+                                        <input asp-for="Stock" type="number" class="form-control" />
+                                        <span asp-validation-for="Stock" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Mevcut Görseller</h6>
+                        </div>
+                        <div class="card-body">
+                            @if (productImages.Any())
+                            {
+                                <div class="row g-2" id="existingImages">
+                                    @foreach (var image in productImages)
+                                    {
+                                        <div class="col-md-3" id="image-@image.Id">
+                                            <div class="card">
+                                                <img src="@image.ImageUrl" class="card-img-top" style="height: 150px; object-fit: cover;">
+                                                <div class="card-body p-2 text-center">
+                                                    <button type="button" class="btn btn-sm btn-danger" 
+                                                            onclick="deleteImage(@image.Id)">
+                                                        <i class="fas fa-trash"></i> Sil
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Bu ürüne ait görsel bulunmamaktadır.</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Yeni Görsel Ekle</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Görsel Yükle</label>
+                                <input type="file" name="Images" class="form-control" multiple accept="image/*" id="imageUpload" />
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Birden fazla görsel seçebilirsiniz
+                                </small>
+                            </div>
+                            <div id="imagePreview" class="row g-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ Kolon -->
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Yayın Durumu</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">Aktif (Satışta)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Kategoriler</h6>
+                        </div>
+                        <div class="card-body">
+                            @if (categories != null && categories.Any())
+                            {
+                                foreach (var category in categories)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox" name="CategoryIds" value="@category.Id" 
+                                               class="form-check-input" id="cat-@category.Id" 
+                                               @(selectedCategories.Contains(category.Id) ? "checked" : "") />
+                                        <label class="form-check-label" for="cat-@category.Id">
+                                            @category.Name
+                                        </label>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-exclamation-triangle"></i> Kategori bulunamadı
+                                </p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Ürün Bilgileri</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><small class="text-muted">Ürün ID:</small> <strong>#@Model.Id</strong></p>
+                            <p class="mb-1"><small class="text-muted">Oluşturulma:</small> <strong>@Model.CreatedDate.ToString("dd/MM/yyyy")</strong></p>
+                            @if (Model.UpdatedDate.HasValue)
+                            {
+                                <p class="mb-0"><small class="text-muted">Son Güncelleme:</small> <strong>@Model.UpdatedDate.Value.ToString("dd/MM/yyyy")</strong></p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                </button>
+                <a asp-area="Admin" asp-controller="Product" asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> İptal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Resim önizleme
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            const files = e.target.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3';
+                    col.innerHTML = `
+                        <div class="card">
+                            <img src="${e.target.result}" class="card-img-top" style="height: 120px; object-fit: cover;">
+                            <div class="card-body p-2 text-center">
+                                <small class="text-muted">${file.name}</small>
+                            </div>
+                        </div>
+                    `;
+                    preview.appendChild(col);
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Resim silme (AJAX)
+        function deleteImage(imageId) {
+            if (confirm('Bu görseli silmek istediğinize emin misiniz?')) {
+                fetch('@Url.Action("DeleteImage", "Product", new { area = "Admin" })', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(imageId)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('image-' + imageId).remove();
+                        alert('Görsel başarıyla silindi!');
+                    } else {
+                        alert('Görsel silinirken bir hata oluştu!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Görsel silinirken bir hata oluştu!');
+                });
+            }
+        }
+    </script>
+}
+

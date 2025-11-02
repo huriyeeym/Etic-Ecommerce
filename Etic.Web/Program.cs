@@ -12,11 +12,11 @@ namespace Etic.Web
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            // Yeni bir Interface yazarsanýz onu buraya eklemeniz lazým yoksa çalýþmaz.
+            // Yeni bir Interface yazarsanï¿½z onu buraya eklemeniz lazï¿½m yoksa ï¿½alï¿½ï¿½maz.
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-            //AddScoped nedir ? bir nesneyi request geldiði anda oluþturur response verildiði anda onu öldürür
-            //6. adým DI
+            //AddScoped nedir ? bir nesneyi request geldiï¿½i anda oluï¿½turur response verildiï¿½i anda onu ï¿½ldï¿½rï¿½r
+            //6. adï¿½m DI
             builder.Services.AddScoped<IUserDal, UserDal>();
             builder.Services.AddScoped<ICategoryDal, CategoryDal>(); //
             builder.Services.AddScoped<ISliderDal, SliderDal>(); //BUUUUU
@@ -41,6 +41,11 @@ namespace Etic.Web
             builder.Services.AddScoped<IBasketProductService, BasketProductService>();
             builder.Services.AddScoped<IBasketDal, BasketDal>();
             builder.Services.AddScoped<IBasketProductDal, BasketProductDal>();
+
+            // Order Management
+            builder.Services.AddScoped<IOrdersDal, OrdersDal>();
+            builder.Services.AddScoped<IOrderProductsDal, OrderProductsDal>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
 
 
 
@@ -86,9 +91,9 @@ namespace Etic.Web
             app.UseRouting();
 
             app.UseAuthorization();
-            // login url þöyle olacak
+            // login url ï¿½ï¿½yle olacak
             // /login
-            // 7login þeklinde gelen tüm istekleriAuthencation controller içerisindeki index action üzerine yönlendirir.
+            // 7login ï¿½eklinde gelen tï¿½m istekleriAuthencation controller iï¿½erisindeki index action ï¿½zerine yï¿½nlendirir.
             app.MapControllerRoute(
                 name: "Register",
                 pattern: "/login/",
@@ -119,6 +124,12 @@ namespace Etic.Web
                 pattern: "/exit/",
                 defaults: new { controller = "Authencation", action = "Exit" });
 
+            // ADMIN AREA ROUTE
+            // URL: /Admin/Controller/Action
+            // Bu route Admin area'sÄ±nÄ± aktif eder
+            app.MapControllerRoute(
+                name: "admin",
+                pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
             app.MapControllerRoute(
                 name: "default",

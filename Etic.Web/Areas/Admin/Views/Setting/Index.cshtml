@@ -1,0 +1,109 @@
+@model IEnumerable<Etic.Entities.Setting>
+
+@{
+    ViewData["Title"] = "Site Settings";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Settings</li>";
+}
+
+<!-- Settings Grid -->
+<div class="row g-4">
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var setting in Model)
+        {
+            <div class="col-md-6">
+                <div class="data-table">
+                    <div class="table-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0" style="font-weight: 600;">
+                                <i class="fas fa-cog me-2" style="color: var(--primary);"></i>@setting.Id
+                            </h6>
+                            <a asp-action="Edit" asp-route-id="@setting.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Setting Key</label>
+                            <div style="font-weight: 500; color: var(--dark);">@setting.Id</div>
+                        </div>
+                        <div>
+                            <label class="form-label text-muted small">Current Value</label>
+                            <div style="padding: 12px; background: var(--light-gray); border-radius: 8px; font-family: monospace; font-size: 13px;">
+                                @if (!string.IsNullOrEmpty(setting.SettingValue))
+                                {
+                                    @setting.SettingValue
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not set</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-cog"></i>
+                <h5>No Settings Found</h5>
+                <p>No settings configured yet</p>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Quick Settings Info Card -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="data-table">
+            <div class="table-header">
+                <h6 class="mb-0" style="font-weight: 600;">
+                    <i class="fas fa-info-circle me-2" style="color: var(--info);"></i>About Settings
+                </h6>
+            </div>
+            <div class="p-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="metric-icon info me-3">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 600; margin-bottom: 4px;">Setting Keys</h6>
+                                <p class="text-muted small mb-0">Each setting has a unique key identifier</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="metric-icon success me-3">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 600; margin-bottom: 4px;">Stored Values</h6>
+                                <p class="text-muted small mb-0">Values are stored in the database</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="metric-icon warning me-3">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 600; margin-bottom: 4px;">Live Updates</h6>
+                                <p class="text-muted small mb-0">Changes take effect immediately</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

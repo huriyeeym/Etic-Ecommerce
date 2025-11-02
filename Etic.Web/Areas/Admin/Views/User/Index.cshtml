@@ -1,0 +1,236 @@
+@model IEnumerable<Etic.Entities.User>
+
+@{
+    ViewData["Title"] = "Users";
+    ViewData["Breadcrumb"] = "<li class=\"breadcrumb-item active\">Users</li>";
+}
+
+<!-- Data Table -->
+<div class="data-table">
+    <!-- Table Header with Filters -->
+    <div class="table-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="table-filters">
+                    <div class="filter-input">
+                        <input type="text" id="searchInput" placeholder="Find User" class="form-control">
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="filter-input" style="min-width: 150px;">
+                        <select id="roleFilter" class="form-select">
+                            <option value="">Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="text-muted me-3">Total: @Model.Count() users</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    @if (Model != null && Model.Any())
+    {
+        <table class="table" id="userTable">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Created At</th>
+                    <th>Items</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr data-id="@user.Id" 
+                        data-name="@user.FullName.ToLower()"
+                        data-email="@user.Email.ToLower()"
+                        data-status="@(user.Status == Etic.Entities.Enums.UserStatus.Active ? "active" : "inactive")"
+                        data-role="@(user.IsAdmin ? "admin" : "user")">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: white; font-weight: 600;">
+                                    @user.FirstName.Substring(0, 1).ToUpper()@user.LastName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div>
+                                    <div style="font-weight: 500; color: var(--dark);">@user.FullName</div>
+                                    <div style="font-size: 12px; color: var(--gray);">@user.Email</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color: var(--gray);">
+                            @user.RegisterDate.ToString("MMM dd, yyyy")
+                            <div style="font-size: 12px;">@user.RegisterDate.ToString("hh:mm tt")</div>
+                        </td>
+                        <td>
+                            <span style="color: var(--gray);">
+                                @(user.Orders?.Count ?? 0) orders
+                            </span>
+                        </td>
+                        <td>
+                            @if (user.IsAdmin)
+                            {
+                                <span class="badge badge-info">
+                                    <i class="fas fa-shield-alt me-1"></i>Admin
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background: var(--light-gray); color: var(--gray);">
+                                    <i class="fas fa-user me-1"></i>User
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.Status == Etic.Entities.Enums.UserStatus.Active)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Inactive</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Table Footer -->
+        <div class="table-footer">
+            <div class="pagination-info">
+                Showing <span id="showingStart">1</span> to <span id="showingEnd">@Model.Count()</span> of <span id="totalCount">@Model.Count()</span> entries
+            </div>
+            <div>
+                <select id="rowsPerPage" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateTable()">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h5>No Users Yet</h5>
+            <p>No registered users found</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let allRows = [];
+        let filteredRows = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            collectRows();
+            updateTable();
+        });
+        
+        function collectRows() {
+            const tbody = document.querySelector('#userTable tbody');
+            if (tbody) {
+                allRows = Array.from(tbody.querySelectorAll('tr'));
+                filteredRows = [...allRows];
+            }
+        }
+        
+        function updateTable() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const roleFilter = document.getElementById('roleFilter')?.value || '';
+            
+            filteredRows = allRows.filter(row => {
+                const name = row.dataset.name || '';
+                const email = row.dataset.email || '';
+                const status = row.dataset.status || '';
+                const role = row.dataset.role || '';
+                
+                const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+                const matchesStatus = !statusFilter || status === statusFilter;
+                const matchesRole = !roleFilter || role === roleFilter;
+                
+                return matchesSearch && matchesStatus && matchesRole;
+            });
+            
+            renderTable();
+        }
+        
+        function renderTable() {
+            const tbody = document.querySelector('#userTable tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h5>No Results Found</h5>
+                                <p>Try adjusting your search or filter criteria</p>
+                                <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear Filters
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filteredRows.forEach(row => {
+                    tbody.appendChild(row.cloneNode(true));
+                });
+            }
+            
+            updatePaginationInfo();
+        }
+        
+        function updatePaginationInfo() {
+            const total = allRows.length;
+            const showing = filteredRows.length;
+            
+            document.getElementById('showingStart').textContent = showing > 0 ? 1 : 0;
+            document.getElementById('showingEnd').textContent = showing;
+            document.getElementById('totalCount').textContent = total;
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('roleFilter').value = '';
+            updateTable();
+        }
+        
+        // Search on keyup
+        document.getElementById('searchInput')?.addEventListener('keyup', updateTable);
+        document.getElementById('statusFilter')?.addEventListener('change', updateTable);
+        document.getElementById('roleFilter')?.addEventListener('change', updateTable);
+    </script>
+}
